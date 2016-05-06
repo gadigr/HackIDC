@@ -21,6 +21,7 @@ GROWTH_RATE = 1.25
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.init()
+offset = (0,0)
 
 # init ocv 
 ap = argparse.ArgumentParser()
@@ -73,7 +74,7 @@ def processCamera():
 		((x, y), radius) = cv2.minEnclosingCircle(c)
 		M = cv2.moments(c)
 		center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-		center = (WIDTH - center[0], center[1])
+		#center = (WIDTH - center[0], center[1])
 		# only proceed if the radius meets a minimum size
 		if radius > 10:
 			# draw the circle and centroid on the frame,
@@ -89,13 +90,57 @@ def processCamera():
 
 	return center
 
+def init():
+    done = False
+    global offset
+    
+    while not done:
+        screen.fill(BACK)
+        pygame.event.get()
+
+        pos = processCamera()
+        pos = (pos[0] + offset[0], pos[1] + offset[1])
+        pygame.draw.circle(screen, FOOD, (WIDTH / 2, HEIGHT / 2), 30, 1)
+        pygame.draw.circle(screen, FORE, pos, 10, 0)
+        
+#        pressed = pygame.key.get_pressed()
+#        print pressed
+#        if pressed[pygame.K_ESCAPE]:
+##            done = True
+#            break
+#        if pressed[pygame.K_w]:
+##            offset = (WIDTH / 2 - pos[0], HEIGHT / 2 - pos[1])
+#            print offset
+#            break
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    done = True
+                    break # break out of the for loop
+                elif event.key == pygame.K_SPACE:
+                    offset = (WIDTH / 2 - pos[0], HEIGHT / 2 - pos[1])
+                    print offset
+                    break
+            elif event.type == pygame.QUIT:
+                done = True
+                break # break out of the for loop
+
+                #   offset 
+        if done:
+            break # to break out of the while loop		
+         
+        pygame.display.flip()
+        
+
 def mainGame():
 	#positions = []
 	#food = None
 	done = False	
 	#length = 200
+
 	my_world = world.world(50, make_food())
 	while not done:
+        
 		for event in pygame.event.get():
 			if event.type == pygame.KEYDOWN:
 				if event.key == pygame.K_ESCAPE:
@@ -104,9 +149,11 @@ def mainGame():
 			elif event.type == pygame.QUIT:
 				done = True
 				break # break out of the for loop
+                
+                
 		if done:
 			break # to break out of the while loop		
-	
+            
 		screen.fill(BACK)
 		pygame.event.get()
 		my_world.positions.append(processCamera())
@@ -150,7 +197,8 @@ def check_collision(positions):
 	return False
 		
 def main():
-	mainGame()
+    init()
+    mainGame()
 	
 	
 if (__name__ == "__main__"):
