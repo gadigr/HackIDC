@@ -12,5 +12,7 @@ positions = []
 while True:
 	screen.fill(BACK)
 	pygame.event.get()
-	pygame.draw.circle(screen, FORE, pygame.mouse.get_pos(), 10, 0)
+	positions.append(pygame.mouse.get_pos())
+	for p in positions:
+		pygame.draw.circle(screen, FORE, p, 10, 0)
 	pygame.display.flip()
