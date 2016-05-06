@@ -6,13 +6,15 @@ HEIGHT = 600
 BACK = (0, 0, 0)
 P_LENGTH = 70
 P_WIDTH = 10
-P_SPEED = 1
+P_SPEED = 2
 ME_COLOR = (255, 150, 150)
 HIM_COLOR = (150, 150, 255)
 ME_X = 20
 HIM_X = WIDTH - ME_X
-BALL_SPEED = 1
+BALL_SPEED = 2
+FPS = 60
 
+# set pygames screen
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.init()
@@ -49,18 +51,38 @@ def main():
 	him_y = HEIGHT / 2 - P_LENGTH / 2
 	ball_p = (WIDTH / 2, HEIGHT / 2)
 	ball_ang = random.random() * math.pi
-	while True:
-		screen.fill(BACK)
-		pygame.event.get()
-		#pygame.draw.circle(screen, (255, 255, 255), pygame.mouse.get_pos(), 10, 0)
+
+	playing = True
+
+	while playing:
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				playing = False
+
+		# calc
 		me_y = pygame.mouse.get_pos()[1]
 		him_y = ai(ball_p, ball_ang, him_y)
+		ball_data = handle_ball(ball_p, ball_ang, me_y, him_y)
+
+		if ball_data is not None:
+			ball_p, ball_ang = ball_data
+		else:
+			playing = False
+
+		# clear screen
+		screen.fill(BACK)
+
+		# draw
 		pygame.draw.rect(screen, ME_COLOR, (ME_X, me_y, P_WIDTH, P_LENGTH))
 		pygame.draw.rect(screen, HIM_COLOR, (HIM_X, him_y, P_WIDTH, P_LENGTH))
-		ball_p, ball_ang = handle_ball(ball_p, ball_ang, me_y, him_y)
+
 		pygame.draw.circle(screen, (255, 255, 255), map(int, ball_p), 7, 0)
+
+		# show
 		pygame.display.flip()
-		
+
+		# tick
+		clock.tick(FPS)
 	
 if (__name__ == "__main__"):
 	main()
