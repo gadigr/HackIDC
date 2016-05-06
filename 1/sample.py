@@ -8,6 +8,9 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.init()
 
+
+
+
 while True:
 	screen.fill(BACK)
 	pygame.event.get()
