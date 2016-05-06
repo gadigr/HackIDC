@@ -207,7 +207,11 @@ def pong_main():
 
 	while playing:
 		for event in pygame.event.get():
-			if event.type == pygame.QUIT:
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_ESCAPE:
+					playing = True
+					# break # break out of the for loop
+			elif event.type == pygame.QUIT:
 				playing = False
 
 		# calc
