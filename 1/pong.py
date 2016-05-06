@@ -1,4 +1,4 @@
-import pygame, math, sys, random, world
+import pygame, math, sys, random
 from collections import deque
 import numpy as np
 import imutils
@@ -18,7 +18,7 @@ ME_COLOR = (255, 150, 150)
 HIM_COLOR = (150, 150, 255)
 ME_X = 20
 HIM_X = WIDTH - ME_X
-BALL_SPEED = 6
+BALL_SPEED = 8
 FPS = 60
 
 # init ocv
@@ -30,13 +30,13 @@ args = vars(ap.parse_args())
 # define the lower and upper boundaries of the "green"
 # ball in the HSV color space, then initialize the
 # list of tracked points
-LowerHsv = (151, 124, 107)
-UpperHsv = (194, 201, 201)
+LowerHsv = (0, 161, 121)
+UpperHsv = (255, 243, 182)
 LowerRgb = (0,22,146)
 UpperRgb = (124,136,255)
 pts = deque(maxlen=args["buffer"])
 
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 
 # set pygames screen
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -52,13 +52,13 @@ def processCamera():
 	frame = imutils.resize(frame, width=WIDTH, height=HEIGHT)
 	blurred = cv2.GaussianBlur(frame, (11, 11), 0)
 	hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-	rgb = frame.copy()
+#	rgb = frame.copy()
 
 	# construct a mask for the color "green", then perform
 	# a series of dilations and erosions to remove any small
 	# blobs left in the mask
 	mask = cv2.inRange(hsv, LowerHsv, UpperHsv)
-	mask = cv2.inRange(rgb, LowerRgb, UpperRgb)
+#	mask = cv2.inRange(rgb, LowerRgb, UpperRgb)
 	mask = cv2.erode(mask, None, iterations=2)
 	mask = cv2.dilate(mask, None, iterations=2)
 
@@ -139,7 +139,7 @@ def main():
 	me_y = HEIGHT / 2 - P_LENGTH / 2
 	him_y = HEIGHT / 2 - P_LENGTH / 2
 	ball_p = (WIDTH / 2, HEIGHT / 2)
-	ball_ang = random.random() * math.pi
+	ball_ang = random.random() * math.pi / 2 + 3 * math.pi / 4
 
 	# background
 	bg = pygame.image.load("images/pong-back.jpg").convert()
