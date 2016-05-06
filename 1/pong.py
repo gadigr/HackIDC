@@ -94,7 +94,7 @@ def processCamera():
 	return center
 
 
-def handle_ball(ball_p, ball_ang, me_y, him_y):
+def handle_ball(ball_p, ball_ang, me_y, him_y, sound):
 	dx = math.cos(ball_ang) * BALL_SPEED
 	dy = math.sin(ball_ang) * BALL_SPEED
 	new_x = ball_p[0] + dx
@@ -107,8 +107,10 @@ def handle_ball(ball_p, ball_ang, me_y, him_y):
 		dy = -dy
 	if (new_x >= ME_X and new_x <= ME_X + P_WIDTH and new_y >= me_y and new_y <= me_y + P_LENGTH):
 		dx = -dx
+		sound.play()
 	if (new_x >= HIM_X and new_x <= HIM_X + P_WIDTH and new_y >= him_y and new_y <= him_y + P_LENGTH):
 		dx = -dx
+		sound.play()
 	
 	ball_p = (new_x, new_y)
 	ball_ang = math.atan2(dy, dx)
@@ -142,6 +144,12 @@ def main():
 	# background
 	bg = pygame.image.load("images/pong-back.jpg").convert()
 
+	# music
+	boing_sound = pygame.mixer.Sound("music/boing.ogg")
+	pygame.mixer.music.load("music/background.ogg")
+	pygame.mixer.music.set_endevent(pygame.constants.USEREVENT)
+	pygame.mixer.music.play(-1)
+
 	# text
 	font = pygame.font.SysFont("Tahoma", 40, False, False)
 
@@ -156,7 +164,7 @@ def main():
 		my_location = processCamera()
 		me_y = pygame.mouse.get_pos()[1]
 		him_y = ai(ball_p, ball_ang, him_y)
-		ball_data = handle_ball(ball_p, ball_ang, my_location[1], him_y)
+		ball_data = handle_ball(ball_p, ball_ang, my_location[1], him_y, boing_sound)
 
 		if ball_data is not None:
 			ball_p, ball_ang = ball_data
