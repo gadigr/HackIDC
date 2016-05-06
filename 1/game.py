@@ -1,6 +1,15 @@
 import pygame, math, sys, random, world
 from pygame.locals import *
+
+#import ocv stuff
+from collections import deque
+import numpy as np
+import argparse
+import imutils
+import cv2
+
 WIDTH = 1024
+
 HEIGHT = 600
 BACK = (204, 255, 255)
 FORE = (0, 255, 0)
@@ -13,18 +22,97 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.init()
 
+# init ocv 
+ap = argparse.ArgumentParser()
+ap.add_argument("-b", "--buffer", type=int, default=64,
+	help="max buffer size")
+args = vars(ap.parse_args())
+
+# define the lower and upper boundaries of the "green"
+# ball in the HSV color space, then initialize the
+# list of tracked points
+LowerHsv = (151, 124, 107)
+UpperHsv = (194, 201, 201)
+LowerRgb = (0,22,146)
+UpperRgb = (124,136,255)
+pts = deque(maxlen=args["buffer"])
+
+camera = cv2.VideoCapture(0)
+
+def processCamera():
+	# grab the current frame
+	(grabbed, frame) = camera.read()
+	
+	# resize the frame, blur it, and convert it to the HSV
+	# color space
+	frame = imutils.resize(frame, width=WIDTH, height=HEIGHT)
+	blurred = cv2.GaussianBlur(frame, (11, 11), 0)
+	hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+	rgb = frame.copy()
+	
+	# construct a mask for the color "green", then perform
+	# a series of dilations and erosions to remove any small
+	# blobs left in the mask
+	mask = cv2.inRange(hsv, LowerHsv, UpperHsv)
+	mask = cv2.inRange(rgb, LowerRgb, UpperRgb)
+	mask = cv2.erode(mask, None, iterations=2)
+	mask = cv2.dilate(mask, None, iterations=2)
+
+	# find contours in the mask and initialize the current
+	# (x, y) center of the ball
+	cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+		cv2.CHAIN_APPROX_SIMPLE)[-2]
+	center = (0,0)
+
+	# only proceed if at least one contour was found
+	if len(cnts) > 0:
+		# find the largest contour in the mask, then use
+		# it to compute the minimum enclosing circle and
+		# centroid
+		c = max(cnts, key=cv2.contourArea)
+		((x, y), radius) = cv2.minEnclosingCircle(c)
+		M = cv2.moments(c)
+		center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+		center = (WIDTH - center[0], center[1])
+		# only proceed if the radius meets a minimum size
+		if radius > 10:
+			# draw the circle and centroid on the frame,
+			# then update the list of tracked points
+			cv2.circle(frame, (int(x), int(y)), int(radius),
+				(0, 255, 255), 2)
+			cv2.circle(frame, center, 5, (0, 0, 255), -1)
+            	# update the points queue
+
+	# show the frame to our screen
+	cv2.imshow("Frame", frame)
+	key = cv2.waitKey(1) & 0xFF
+
+	return center
+
 def mainGame():
 	#positions = []
 	#food = None
+	done = False	
 	#length = 200
 	my_world = world.world(50, make_food())
-	while True:
+	while not done:
+		for event in pygame.event.get():
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_ESCAPE:
+					done = True
+					break # break out of the for loop
+			elif event.type == pygame.QUIT:
+				done = True
+				break # break out of the for loop
+		if done:
+			break # to break out of the while loop		
+	
 		screen.fill(BACK)
 		pygame.event.get()
-		my_world.positions.append(pygame.mouse.get_pos())
+		my_world.positions.append(processCamera())
 		my_world.positions = my_world.positions[-my_world.length:]
-		if (check_collision(my_world.positions)):
-			return
+		#if (check_collision(my_world.positions)):
+			#return
 		for i in range(len(my_world.positions)):
 			p = my_world.positions[i]
 			radius = int(HEAD_RADIUS * float(i) / my_world.length + TAIL_RADIUS * float(my_world.length - i) / my_world.length)

@@ -28,8 +28,10 @@ args = vars(ap.parse_args())
 # define the lower and upper boundaries of the "green"
 # ball in the HSV color space, then initialize the
 # list of tracked points
-greenLower = (151, 124, 107)
-greenUpper = (194, 201, 201)
+LowerHsv = (151, 124, 107)
+UpperHsv = (194, 201, 201)
+LowerRgb = (0,22,146)
+UpperRgb = (124,136,255)
 pts = deque(maxlen=args["buffer"])
 
 camera = cv2.VideoCapture(0)
@@ -43,11 +45,13 @@ def processCamera():
 	frame = imutils.resize(frame, width=WIDTH, height=HEIGHT)
 	blurred = cv2.GaussianBlur(frame, (11, 11), 0)
 	hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+	rgb = frame.copy()
 
 	# construct a mask for the color "green", then perform
 	# a series of dilations and erosions to remove any small
 	# blobs left in the mask
-	mask = cv2.inRange(hsv, greenLower, greenUpper)
+	mask = cv2.inRange(hsv, LowerHsv, UpperHsv)
+	mask = cv2.inRange(rgb, LowerRgb, UpperRgb)
 	mask = cv2.erode(mask, None, iterations=2)
 	mask = cv2.dilate(mask, None, iterations=2)
 
@@ -103,7 +107,7 @@ while not done:
 	screen.fill(BACK)
 	pygame.event.get()
 	#pygame.draw.circle(screen, FORE, pygame.mouse.get_pos(), 10, 0)
-	print pos
+	
 	pygame.draw.circle(screen, FORE, pos, 10, 0)
 	pygame.display.flip()
 
