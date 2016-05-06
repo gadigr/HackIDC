@@ -4,14 +4,16 @@ from pygame.locals import *
 WIDTH = 1024
 HEIGHT = 600
 BACK = (0, 0, 0)
+BORDER_MARGIN = 5
+BORDER_COLOR = (250, 250, 250)
 P_LENGTH = 70
 P_WIDTH = 10
-P_SPEED = 2
+P_SPEED = 3
 ME_COLOR = (255, 150, 150)
 HIM_COLOR = (150, 150, 255)
 ME_X = 20
 HIM_X = WIDTH - ME_X
-BALL_SPEED = 2
+BALL_SPEED = 4
 FPS = 60
 
 # set pygames screen
@@ -45,15 +47,29 @@ def ai(ball_p, ball_ang, him_y):
 	if (y < ball_p[1]): him_y += P_SPEED
 	else: him_y -= P_SPEED
 	return him_y
-	
+
+def make_rainbow_color(phase):
+	center = 128
+	width = 127
+	frequency = math.pi * 2 / 120
+	red = math.sin(frequency * phase + 2) * width + center
+	green = math.sin(frequency * phase + 0) * width + center
+	blue = math.sin(frequency * phase + 4) * width + center
+
+	return (red, green, blue)
+
 def main():
 	me_y = HEIGHT / 2 - P_LENGTH / 2
 	him_y = HEIGHT / 2 - P_LENGTH / 2
 	ball_p = (WIDTH / 2, HEIGHT / 2)
 	ball_ang = random.random() * math.pi
+	rainbow_phase = 1
 
 	# background
 	bg = pygame.image.load("images/pong-back.jpg").convert()
+
+	# text
+	font = pygame.font.SysFont("Tahoma", 40, False, False)
 
 	playing = True
 
@@ -75,7 +91,15 @@ def main():
 		# clear screen
 		# screen.fill(BACK)
 		screen.blit(bg, (0,0))
-		# draw
+		text = font.render("DRONE PONG", True, make_rainbow_color(rainbow_phase))
+		screen.blit(text, ((WIDTH / 2) - 135, BORDER_MARGIN + 20))
+		rainbow_phase += 1
+
+		# draw borders
+		pygame.draw.rect(screen, BORDER_COLOR, (BORDER_MARGIN, BORDER_MARGIN, WIDTH - (BORDER_MARGIN * 2), HEIGHT - (BORDER_MARGIN * 2)), 3)
+		pygame.draw.rect(screen, BORDER_COLOR, (WIDTH / 2, BORDER_MARGIN, 3, HEIGHT - BORDER_MARGIN * 2))
+
+		# draw players and ball
 		pygame.draw.rect(screen, ME_COLOR, (ME_X, me_y, P_WIDTH, P_LENGTH))
 		pygame.draw.rect(screen, HIM_COLOR, (HIM_X, him_y, P_WIDTH, P_LENGTH))
 		pygame.draw.circle(screen, (255, 255, 255), map(int, ball_p), 8, 0)
