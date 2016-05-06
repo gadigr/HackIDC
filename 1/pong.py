@@ -52,6 +52,9 @@ def main():
 	ball_p = (WIDTH / 2, HEIGHT / 2)
 	ball_ang = random.random() * math.pi
 
+	# background
+	bg = pygame.image.load("images/pong-back.jpg").convert()
+
 	playing = True
 
 	while playing:
@@ -70,13 +73,12 @@ def main():
 			playing = False
 
 		# clear screen
-		screen.fill(BACK)
-
+		# screen.fill(BACK)
+		screen.blit(bg, (0,0))
 		# draw
 		pygame.draw.rect(screen, ME_COLOR, (ME_X, me_y, P_WIDTH, P_LENGTH))
 		pygame.draw.rect(screen, HIM_COLOR, (HIM_X, him_y, P_WIDTH, P_LENGTH))
-
-		pygame.draw.circle(screen, (255, 255, 255), map(int, ball_p), 7, 0)
+		pygame.draw.circle(screen, (255, 255, 255), map(int, ball_p), 8, 0)
 
 		# show
 		pygame.display.flip()
