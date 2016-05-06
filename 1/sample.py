@@ -7,9 +7,7 @@ FORE = (0, 255, 0)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.init()
-
-
-
+# test
 
 while True:
 	screen.fill(BACK)
