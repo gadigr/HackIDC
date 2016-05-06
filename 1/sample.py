@@ -28,8 +28,10 @@ args = vars(ap.parse_args())
 # define the lower and upper boundaries of the "green"
 # ball in the HSV color space, then initialize the
 # list of tracked points
-greenLower = (29, 86, 6)
-greenUpper = (64, 255, 255)
+LowerHsv = (151, 124, 107)
+UpperHsv = (194, 201, 201)
+LowerRgb = (0,22,146)
+UpperRgb = (124,136,255)
 pts = deque(maxlen=args["buffer"])
 
 camera = cv2.VideoCapture(0)
@@ -40,14 +42,16 @@ def processCamera():
 	
 	# resize the frame, blur it, and convert it to the HSV
 	# color space
-	frame = imutils.resize(frame, width=600)
+	frame = imutils.resize(frame, width=WIDTH, height=HEIGHT)
 	blurred = cv2.GaussianBlur(frame, (11, 11), 0)
 	hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+	rgb = frame.copy()
 
 	# construct a mask for the color "green", then perform
 	# a series of dilations and erosions to remove any small
 	# blobs left in the mask
-	mask = cv2.inRange(hsv, greenLower, greenUpper)
+	mask = cv2.inRange(hsv, LowerHsv, UpperHsv)
+	mask = cv2.inRange(rgb, LowerRgb, UpperRgb)
 	mask = cv2.erode(mask, None, iterations=2)
 	mask = cv2.dilate(mask, None, iterations=2)
 
@@ -66,7 +70,7 @@ def processCamera():
 		((x, y), radius) = cv2.minEnclosingCircle(c)
 		M = cv2.moments(c)
 		center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-
+		center = (WIDTH - center[0], center[1])
 		# only proceed if the radius meets a minimum size
 		if radius > 10:
 			# draw the circle and centroid on the frame,
@@ -77,9 +81,9 @@ def processCamera():
             	# update the points queue
 
 	# show the frame to our screen
-	#cv2.imshow("Frame", frame)
+	cv2.imshow("Frame", frame)
 	key = cv2.waitKey(1) & 0xFF
-	
+
 	return center
 
 #game loop
@@ -103,7 +107,7 @@ while not done:
 	screen.fill(BACK)
 	pygame.event.get()
 	#pygame.draw.circle(screen, FORE, pygame.mouse.get_pos(), 10, 0)
-	print pos
+	
 	pygame.draw.circle(screen, FORE, pos, 10, 0)
 	pygame.display.flip()
 
