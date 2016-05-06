@@ -15,7 +15,7 @@ FORE = (0, 255, 0)
 FOOD = (255, 102, 0)
 HEAD_RADIUS = 10
 TAIL_RADIUS = 1
-MIN_COLLIDE_RADIUS = 25
+MIN_COLLIDE_RADIUS = 50
 FOOD_SIZE = 50
 BACK_IMG = pygame.transform.scale(pygame.image.load(r'assets\background.png'), (WIDTH, HEIGHT))
 BIRD_IMG = pygame.transform.scale(pygame.image.load(r'assets\bird.png'), (FOOD_SIZE, FOOD_SIZE))
@@ -39,8 +39,10 @@ args = vars(ap.parse_args())
 # define the lower and upper boundaries of the "green"
 # ball in the HSV color space, then initialize the
 # list of tracked points
-LowerHsv = (151, 124, 107)
-UpperHsv = (194, 201, 201)
+LowerHsv = (0, 161, 121)
+UpperHsv = (255, 243, 182)
+#LowerHsv = (0, 100, 105)
+#UpperHsv = (201, 253, 219)
 LowerRgb = (0,22,146)
 UpperRgb = (124,136,255)
 
@@ -55,13 +57,13 @@ def processCamera():
 	frame = imutils.resize(frame, width=WIDTH, height=HEIGHT)
 	blurred = cv2.GaussianBlur(frame, (11, 11), 0)
 	hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-	rgb = frame.copy()
+#	rgb = frame.copy()
 	
 	# construct a mask for the color "green", then perform
 	# a series of dilations and erosions to remove any small
 	# blobs left in the mask
 	mask = cv2.inRange(hsv, LowerHsv, UpperHsv)
-	mask = cv2.inRange(rgb, LowerRgb, UpperRgb)
+#	mask = cv2.inRange(rgb, LowerRgb, UpperRgb)
 	mask = cv2.erode(mask, None, iterations=2)
 	mask = cv2.dilate(mask, None, iterations=2)
 
@@ -91,7 +93,7 @@ def processCamera():
             	# update the points queue
 
 	# show the frame to our screen
-	#cv2.imshow("Frame", frame)
+	cv2.imshow("Frame", frame)
 	key = cv2.waitKey(1) & 0xFF
 
 	return center
@@ -167,7 +169,7 @@ def mainGame():
 		pygame.display.flip()
 
 def make_food():
-	return (random.randint(10, WIDTH - 10), random.randint(10, HEIGHT - 10))
+	return (random.randint(50, WIDTH - 50), random.randint(50, HEIGHT - 50))
 	
 def create_poly(positions):
 	poly = [positions[0]]
