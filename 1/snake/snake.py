@@ -8,6 +8,7 @@ import argparse
 import imutils
 import cv2
 
+#snake
 WIDTH = 1024
 HEIGHT = 600
 BACK = (204, 255, 255)
@@ -26,6 +27,19 @@ pygame.init()
 pygame.mixer.init(44100, -16, 2, 2048)
 MUSIC = pygame.mixer.Sound(r'assets\banjo.ogg')
 EAT = pygame.mixer.Sound(r'assets\Eat.ogg')
+
+#pong
+BORDER_MARGIN = 5
+BORDER_COLOR = (250, 250, 250)
+P_LENGTH = 100
+P_WIDTH = 10
+P_SPEED = 6
+ME_COLOR = (255, 150, 150)
+HIM_COLOR = (150, 150, 255)
+ME_X = 20
+HIM_X = WIDTH - ME_X
+BALL_SPEED = 8
+FPS = 60
 
 offset = (0,0)
 
@@ -129,7 +143,114 @@ def init():
                 # break # break out of the for loop	
          
         pygame.display.flip()
-        
+ 
+def handle_ball(ball_p, ball_ang, me_y, him_y, sound):
+	dx = math.cos(ball_ang) * BALL_SPEED
+	dy = math.sin(ball_ang) * BALL_SPEED
+	new_x = ball_p[0] + dx
+	new_y = ball_p[1] + dy
+	
+	if (new_x <= 0 or new_x >= WIDTH):
+		#dx = -dx
+		return
+	if (new_y <= 0 or new_y >= HEIGHT):
+		dy = -dy
+	if (new_x >= ME_X and new_x <= ME_X + P_WIDTH and new_y >= me_y and new_y <= me_y + P_LENGTH):
+		dx = -dx
+		sound.play()
+	if (new_x >= HIM_X and new_x <= HIM_X + P_WIDTH and new_y >= him_y and new_y <= him_y + P_LENGTH):
+		dx = -dx
+		sound.play()
+	
+	ball_p = (new_x, new_y)
+	ball_ang = math.atan2(dy, dx)
+	
+	return ball_p, ball_ang
+
+def ai(ball_p, ball_ang, him_y):
+	y = him_y + P_LENGTH / 2
+	if (y < ball_p[1]): him_y += P_SPEED
+	else: him_y -= P_SPEED
+	return him_y
+
+def make_rainbow_color():
+	make_rainbow_color.counter += 1
+	center = 128
+	width = 127
+	frequency = math.pi * 2 / 120
+	red = math.sin(frequency * make_rainbow_color.counter  + 2) * width + center
+	green = math.sin(frequency * make_rainbow_color.counter  + 0) * width + center
+	blue = math.sin(frequency * make_rainbow_color.counter  + 4) * width + center
+
+	return (red, green, blue)
+make_rainbow_color.counter = 0
+
+def pong_main():
+	me_y = HEIGHT / 2 - P_LENGTH / 2
+	him_y = HEIGHT / 2 - P_LENGTH / 2
+	ball_p = (WIDTH / 2, HEIGHT / 2)
+	ball_ang = random.random() * math.pi / 2 + 3 * math.pi / 4
+
+	# background
+	bg = pygame.image.load("images/pong-back.jpg").convert()
+
+	# music
+	boing_sound = pygame.mixer.Sound("music/boing.ogg")
+	pygame.mixer.music.load("music/background.ogg")
+	pygame.mixer.music.set_endevent(pygame.constants.USEREVENT)
+	pygame.mixer.music.play(-1)
+
+	# text
+	font = pygame.font.SysFont("Tahoma", 40, False, False)
+
+	playing = True
+
+	while playing:
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				playing = False
+
+		# calc
+		my_location = get_pos()
+		me_y = pygame.mouse.get_pos()[1]
+		him_y = ai(ball_p, ball_ang, him_y)
+		ball_data = handle_ball(ball_p, ball_ang, my_location[1], him_y, boing_sound)
+
+		if ball_data is not None:
+			ball_p, ball_ang = ball_data
+		else:
+			playing = False
+
+		# clear screen
+		# screen.fill(BACK)
+		screen.blit(bg, (0,0))
+		text = font.render("DRONE PONG", True, make_rainbow_color())
+		screen.blit(text, ((WIDTH / 2) - 135, BORDER_MARGIN + 20))
+
+		# draw borders
+		pygame.draw.rect(screen, BORDER_COLOR, (BORDER_MARGIN, BORDER_MARGIN, WIDTH - (BORDER_MARGIN * 2), HEIGHT - (BORDER_MARGIN * 2)), 3)
+		pygame.draw.rect(screen, BORDER_COLOR, (WIDTH / 2, BORDER_MARGIN, 3, HEIGHT - BORDER_MARGIN * 2))
+
+		# draw players and ball
+		pygame.draw.rect(screen, ME_COLOR, (ME_X, my_location[1], P_WIDTH, P_LENGTH))
+		pygame.draw.rect(screen, HIM_COLOR, (HIM_X, him_y, P_WIDTH, P_LENGTH))
+		pygame.draw.circle(screen, (255, 255, 255), map(int, ball_p), 8, 0)
+		pygame.draw.circle(screen, (255, 0, 0), my_location, 10, 0)
+
+		# show
+		pygame.display.flip()
+
+		# tick
+		clock.tick(FPS)
+
+	screen.fill((0, 0, 0))
+	text = font.render("YOU LOST", True, (255, 0, 0))
+	screen.blit(text, ((WIDTH / 2) - 135, BORDER_MARGIN + 20))
+	pygame.display.flip()
+
+	# cleanup the camera and close any open windows
+	camera.release()
+	cv2.destroyAllWindows() 
 
 def mainGame():
 	done = False
@@ -218,6 +339,7 @@ def check_collision(positions):
 		
 def main():
 	init()
+	pong_main()
 	mainGame()
 	
 	
