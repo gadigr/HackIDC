@@ -29,6 +29,13 @@ EAT = pygame.mixer.Sound(r'assets\Eat.ogg')
 
 offset = (0,0)
 
+ap = argparse.ArgumentParser()
+ap.add_argument("-m", "--mouse",
+	help="to position with mouse", required=False, action='store_true')
+args = vars(ap.parse_args())
+
+
+
 # define the lower and upper boundaries of the "green"
 # ball in the HSV color space, then initialize the
 # list of tracked points
@@ -89,15 +96,18 @@ def processCamera():
 
 	return center
 
+get_pos = pygame.mouse.get_pos if bool(args['mouse']) else processCamera
+
 def init():
     done = False
     global offset
     
     while not done:
         screen.fill(BACK)
-        pygame.event.get()
+        
 
-        pos = processCamera()
+        #pos = processCamera()
+        pos = get_pos()
         pos = (pos[0] + offset[0], pos[1] + offset[1])
         pygame.draw.circle(screen, FOOD, (WIDTH / 2, HEIGHT / 2), 30, 1)
         pygame.draw.circle(screen, FORE, pos, 10, 0)
@@ -106,23 +116,22 @@ def init():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     done = True
-                    break # break out of the for loop
+                    # break # break out of the for loop
                 elif event.key == pygame.K_SPACE:
-                    offset = (WIDTH / 2 - pos[0], HEIGHT / 2 - pos[1])
-                    print offset
-                    break
+					pos = get_pos()
+					offset = (WIDTH / 2 - pos[0], HEIGHT / 2 - pos[1])
+					# print offset
+
             elif event.type == pygame.QUIT:
                 done = True
-                break # break out of the for loop
-
-        if done:
-            break # to break out of the while loop		
+                # break # break out of the for loop	
          
         pygame.display.flip()
         
 
 def mainGame():
 	done = False
+	global offset
 	my_world = world.world(30, make_food())
 	MUSIC.play()
 	while not done:
@@ -133,16 +142,18 @@ def mainGame():
 			if event.type == pygame.KEYDOWN:
 				if event.key == pygame.K_ESCAPE:
 					done = True
-					break # break out of the for loop
+					# break # break out of the for loop
 			elif event.type == pygame.QUIT:
 				done = True
-				break # break out of the for loop
-                
-                
-		if done:
-			break # to break out of the while loop		
+				# break # break out of the for loop
+	
 
-		my_world.positions.append(pygame.mouse.get_pos())
+		#pos = processCamera()
+		pos = get_pos()
+		pos = (pos[0] + offset[0], pos[1] + offset[1])
+
+		# my_world.positions.append(pygame.mouse.get_pos())
+		my_world.positions.append(pos)
 		my_world.positions = my_world.positions[-my_world.length:]
 
 		if (len(my_world.positions) > 1):
