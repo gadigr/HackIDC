@@ -257,7 +257,7 @@ def pong_main():
 	font = pygame.font.SysFont("Tahoma", 40, False, False)
 
 	playing = True
-
+	lost = False
 	while playing:
 		for event in pygame.event.get():
 			if event.type == pygame.KEYDOWN:
@@ -278,6 +278,7 @@ def pong_main():
 			ball_p, ball_ang = ball_data
 		else:
 			playing = False
+			lost = True
 
 		# clear screen
 		# screen.fill(BACK)
@@ -300,11 +301,11 @@ def pong_main():
 
 		# tick
 		clock.tick(FPS)
-
-	screen.fill((0, 0, 0))
-	text = font.render("YOU LOST", True, (255, 0, 0))
-	screen.blit(text, ((WIDTH / 2) - 135, BORDER_MARGIN + 20))
-	pygame.display.flip()
+	if (lost == True):
+		screen.fill((0, 0, 0))
+		text = font.render("YOU LOST", True, (255, 0, 0))
+		screen.blit(text, ((WIDTH / 2) - 135, BORDER_MARGIN + 20))
+		pygame.display.flip()
 
 	# cleanup the camera and close any open windows
 	# camera.release()
