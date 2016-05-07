@@ -11,37 +11,45 @@ import cv2
 #snake
 WIDTH = 1024
 HEIGHT = 600
+# WIDTH = 3200
+# HEIGHT = 1800
 BACK = (204, 255, 255)
 FORE = (0, 255, 0)
 FOOD = (255, 102, 0)
 HEAD_RADIUS = 10
 TAIL_RADIUS = 1
-MIN_COLLIDE_RADIUS = 50
-FOOD_SIZE = 100
+MIN_COLLIDE_RADIUS = 150
+FOOD_SIZE = 150
 BACK_IMG = pygame.transform.scale(pygame.image.load(r'assets\background.png'), (WIDTH, HEIGHT))
 BIRD_IMG = pygame.transform.scale(pygame.image.load(r'assets\bird.png'), (FOOD_SIZE, FOOD_SIZE))
+QUAD_IMG = pygame.transform.scale(pygame.image.load(r'assets\quad.png'), (300, 190))
+BACK_DRONES_IMG = pygame.transform.scale(pygame.image.load(r'assets\drones.png'), (WIDTH, HEIGHT))
 PRESENT_IMG = pygame.transform.scale(pygame.image.load(r'assets\present.png'), (FOOD_SIZE * 2, FOOD_SIZE * 2))
 GROWTH_RATE = 1.25
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+# screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.init()
 pygame.mixer.init(44100, -16, 2, 2048)
 pygame.font.init()
 MUSIC = pygame.mixer.Sound(r'assets\banjo.ogg')
+THRONES_MUSIC = pygame.mixer.Sound(r'assets\thrones.ogg')
+PRESENT_MUSIC = pygame.mixer.Sound(r'assets\jingle.ogg')
+BZZ = pygame.mixer.Sound(r'assets\bzz.ogg')
 EAT = pygame.mixer.Sound(r'assets\Eat.ogg')
 TAKE_PRESENT = pygame.mixer.Sound(r'assets\present.ogg')
 
 #pong
 BORDER_MARGIN = 5
 BORDER_COLOR = (250, 250, 250)
-P_LENGTH = 100
+P_LENGTH = 200
 P_WIDTH = 10
-P_SPEED = 6
+P_SPEED = 5
 ME_COLOR = (255, 150, 150)
 HIM_COLOR = (150, 150, 255)
 ME_X = 20
 HIM_X = WIDTH - ME_X
-BALL_SPEED = 8
+BALL_SPEED = 6
 FPS = 60
 
 offset = (0,0)
@@ -49,6 +57,8 @@ offset = (0,0)
 ap = argparse.ArgumentParser()
 ap.add_argument("-m", "--mouse",
 	help="to position with mouse", required=False, action='store_true')
+ap.add_argument("-w", "--webcam",
+	help="to show camera", required=False, action='store_true')
 args = vars(ap.parse_args())
 
 
@@ -56,8 +66,10 @@ args = vars(ap.parse_args())
 # define the lower and upper boundaries of the "green"
 # ball in the HSV color space, then initialize the
 # list of tracked points
-LowerHsv = (0, 161, 121)
-UpperHsv = (255, 243, 182)
+# LowerHsv = (0, 161, 121)
+# UpperHsv = (255, 243, 182)
+LowerHsv = (126, 119, 107)
+UpperHsv = (201, 207, 235)
 #LowerHsv = (0, 100, 105)
 #UpperHsv = (201, 253, 219)
 LowerRgb = (0,22,146)
@@ -107,45 +119,83 @@ def processCamera():
 			cv2.circle(frame, (int(x), int(y)), int(radius),
 				(0, 255, 255), 2)
 			cv2.circle(frame, center, 5, (0, 0, 255), -1)
-            	# update the points queue
+				# update the points queue
 
 	# show the frame to our screen
-	cv2.imshow("Frame", frame)
+	if bool(args['webcam']):
+		cv2.imshow("Frame", frame)
 	key = cv2.waitKey(1) & 0xFF
 
 	return center
 
 get_pos = pygame.mouse.get_pos if bool(args['mouse']) else processCamera
 
-def init():
-    done = False
-    global offset
-    
-    while not done:
-        screen.fill(BACK)
-        
+def update_quad_pos(pos, dir):
 
-        #pos = processCamera()
-        pos = get_pos()
-        pos = (pos[0] + offset[0], pos[1] + offset[1])
-        pygame.draw.circle(screen, FOOD, (WIDTH / 2, HEIGHT / 2), 30, 1)
-        pygame.draw.circle(screen, FORE, pos, 10, 0)
-        
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    done = True
-                    # break # break out of the for loop
-                elif event.key == pygame.K_SPACE:
+	pos = (pos[0] + (15 * dir), pos[1])
+	return pos
+
+def finish_screen():
+	done = False
+	quad_pos = (-300, 100)
+	direction = 1
+	THRONES_MUSIC.play()
+	while not done:
+		screen.blit(BACK_DRONES_IMG, (0, 0))
+		for event in pygame.event.get():
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_ESCAPE:
+					done = True
+			elif event.type == pygame.QUIT:
+				done = True
+
+		quad_pos = update_quad_pos(quad_pos, direction)
+
+		if (direction > 0 and quad_pos[0] < WIDTH):
+			direction = 1
+		elif (direction > 0 and quad_pos[0] >= WIDTH):
+			pygame.transform.flip(QUAD_IMG, True, False)
+			BZZ.play()
+			direction = -1
+		elif (direction < 0 and quad_pos[0] > -300):		
+			direction = -1
+		elif (direction < 0 and quad_pos[0] <= -300):
+			pygame.transform.flip(QUAD_IMG, True, False)
+			BZZ.play()
+			direction = 1 
+
+		screen.blit(QUAD_IMG, quad_pos)
+
+		pygame.display.flip()
+
+def init():
+	done = False
+	global offset	
+	
+	while not done:
+		screen.fill(BACK)
+		
+		#pos = processCamera()
+		pos = get_pos()
+		pos = (pos[0] + offset[0], pos[1] + offset[1])
+		pygame.draw.circle(screen, FOOD, (WIDTH / 2, HEIGHT / 2), 30, 1)
+		pygame.draw.circle(screen, FORE, pos, 10, 0)
+		
+		for event in pygame.event.get():
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_ESCAPE:
+					done = True
+					# break # break out of the for loop
+				elif event.key == pygame.K_SPACE:
 					pos = get_pos()
 					offset = (WIDTH / 2 - pos[0], HEIGHT / 2 - pos[1])
 					# print offset
 
-            elif event.type == pygame.QUIT:
-                done = True
-                # break # break out of the for loop	
-         
-        pygame.display.flip()
+			elif event.type == pygame.QUIT:
+				done = True
+				# break # break out of the for loop	
+		 
+		pygame.display.flip()
  
 def handle_ball(ball_p, ball_ang, me_y, him_y, sound):
 	dx = math.cos(ball_ang) * BALL_SPEED
@@ -192,7 +242,7 @@ def pong_main():
 	me_y = HEIGHT / 2 - P_LENGTH / 2
 	him_y = HEIGHT / 2 - P_LENGTH / 2
 	ball_p = (WIDTH / 2, HEIGHT / 2)
-	ball_ang = random.random() * math.pi / 2 + 3 * math.pi / 4
+	ball_ang = random.random() * math.pi / 4 + math.pi / 8
 
 	# background
 	bg = pygame.image.load("images/pong-back.jpg").convert()
@@ -257,8 +307,9 @@ def pong_main():
 	pygame.display.flip()
 
 	# cleanup the camera and close any open windows
-	camera.release()
-	cv2.destroyAllWindows() 
+	# camera.release()
+	# cv2.destroyAllWindows() 
+	pygame.mixer.music.stop()
 
 def mainGame():
 	done = False
@@ -296,6 +347,7 @@ def mainGame():
 
 		screen.blit(BIRD_IMG, map(lambda n: n - FOOD_SIZE / 2, my_world.food))
 		pygame.display.flip()
+	MUSIC.stop()
 
 def make_food():
 	return (random.randint(50, WIDTH - 50), random.randint(50, HEIGHT - 50))
@@ -350,6 +402,7 @@ def drone_something_main():
 	back = pygame.transform.scale(pygame.image.load(r'assets\present_back.jpg'), (WIDTH, HEIGHT))
 	myfont = pygame.font.SysFont("tahoma", 37)
 	data = json.loads(urllib2.urlopen('https://hackidc-t14.firebaseio.com/.json').read())
+	PRESENT_MUSIC.play()
 	shtut = 100
 	while not done:
 		clock.tick(30)
@@ -388,12 +441,15 @@ def drone_something_main():
 					TAKE_PRESENT.play()
 		
 		pygame.display.flip()
+	PRESENT_MUSIC.stop()
 	
 def main():
+	
 	init()
 	pong_main()
-	mainGame()
 	drone_something_main()
+	mainGame()
+	finish_screen()
 	
 	
 if (__name__ == "__main__"):
