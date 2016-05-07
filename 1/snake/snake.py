@@ -1,4 +1,4 @@
-import pygame, math, sys, random, world, pygame.gfxdraw, imutils
+import pygame, math, sys, random, world, pygame.gfxdraw, imutils, urllib2, json
 from pygame.locals import *
 
 #import ocv stuff
@@ -17,16 +17,19 @@ FOOD = (255, 102, 0)
 HEAD_RADIUS = 10
 TAIL_RADIUS = 1
 MIN_COLLIDE_RADIUS = 50
-FOOD_SIZE = 50
+FOOD_SIZE = 100
 BACK_IMG = pygame.transform.scale(pygame.image.load(r'assets\background.png'), (WIDTH, HEIGHT))
 BIRD_IMG = pygame.transform.scale(pygame.image.load(r'assets\bird.png'), (FOOD_SIZE, FOOD_SIZE))
+PRESENT_IMG = pygame.transform.scale(pygame.image.load(r'assets\present.png'), (FOOD_SIZE * 2, FOOD_SIZE * 2))
 GROWTH_RATE = 1.25
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.init()
 pygame.mixer.init(44100, -16, 2, 2048)
+pygame.font.init()
 MUSIC = pygame.mixer.Sound(r'assets\banjo.ogg')
 EAT = pygame.mixer.Sound(r'assets\Eat.ogg')
+TAKE_PRESENT = pygame.mixer.Sound(r'assets\present.ogg')
 
 #pong
 BORDER_MARGIN = 5
@@ -216,6 +219,7 @@ def pong_main():
 
 		# calc
 		my_location = get_pos()
+		my_location = (my_location[0] + offset[0], my_location[1] + offset[1])
 		me_y = pygame.mouse.get_pos()[1]
 		him_y = ai(ball_p, ball_ang, him_y)
 		ball_data = handle_ball(ball_p, ball_ang, my_location[1], him_y, boing_sound)
@@ -340,11 +344,56 @@ def check_collision(positions):
 		prev_p = curr_p
 	
 	return False
+
+def drone_something_main():
+	done = False
+	back = pygame.transform.scale(pygame.image.load(r'assets\present_back.jpg'), (WIDTH, HEIGHT))
+	myfont = pygame.font.SysFont("tahoma", 37)
+	data = json.loads(urllib2.urlopen('https://hackidc-t14.firebaseio.com/.json').read())
+	shtut = 100
+	while not done:
+		clock.tick(30)
+		screen.blit(back, (0, 0))
+		for event in pygame.event.get():
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_ESCAPE:
+					done = True
+			elif event.type == pygame.QUIT:
+				done = True
+         
+		pos = get_pos()
+		pos = (pos[0] + offset[0], pos[1] + offset[1])
+		pygame.draw.circle(screen, FOOD, pos, 10, 0)
 		
+		shtut -= 1
+		if (shtut == 0):
+			shtut = 120
+			new_data = json.loads(urllib2.urlopen('https://hackidc-t14.firebaseio.com/.json').read())
+			if (new_data != None):
+				new_data = [[p[0], 0] for p in new_data]
+			if (data == None and new_data != None):
+				data = new_data
+			elif (new_data != None):
+				data += new_data[len(data):]
+		
+		for i in range(len(data) if data != None else 0):
+			if (data[i] != None):
+				data[i][1] += 10 / float(WIDTH)
+				label = myfont.render(str(i + 1), 1, (255,255,0))
+				x, y = int(data[i][0] * WIDTH), int(data[i][1] * HEIGHT)
+				screen.blit(PRESENT_IMG, (x - FOOD_SIZE / 2, y - FOOD_SIZE / 2))
+				
+				if (dist(pos, (x, y)) < FOOD_SIZE * 2):
+					data[i] = None
+					TAKE_PRESENT.play()
+		
+		pygame.display.flip()
+	
 def main():
 	init()
 	pong_main()
 	mainGame()
+	drone_something_main()
 	
 	
 if (__name__ == "__main__"):

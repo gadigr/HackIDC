@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+	<style type='text/css'>
+		* {
+			background: rgb(102, 255, 102);
+			font-family: 'Tahoma';
+			cursor: pointer;
+		}
+		
+		#message {
+			position: relative;
+			top: 37vh;
+			text-align: center;
+			width: 100%;
+			font-size: 3em;
+		}
+		
+		.mark {
+			position: absolute;
+			font-size: 3em;
+			font-weight: bold;
+			background: none;
+		}
+	</style>
+	<head>
+		<title>DroneSomething</title>
+		<script src="https://cdn.firebase.com/js/client/2.4.2/firebase.js"></script>
+	</head>
+	<body id='body'>
+		<div id='message'>
+			Tap anywhere!
+		</div>
+	</body>
+	<script type='text/javascript'>
+		var myFirebaseRef = new Firebase("https://hackidc-t14.firebaseio.com//");
+		count = 0;
+		colors = [
+			'rgb(0, 102, 255)',
+			'rgb(255, 51, 204)',
+			'rgb(255, 153, 0)'
+		];
+		
+		positions = [];
+		
+		window.onclick = function handleClick(e) {
+			console.log(e);
+			x = e.clientX;
+			y = e.clientY;
+			positions.push([x / window.innerWidth, y / window.innerHeight]);
+			myFirebaseRef.set(positions);
+			var body = document.getElementById('body');
+			var mark = document.createElement('div');
+			mark.className = "mark";
+			mark.innerHTML = count + 1;
+			mark.style.top = y - 15 + "px";
+			mark.style.left = x - 15 + "px";
+			mark.style.color = colors[count];
+			body.appendChild(mark);
+			
+			/*if (count == 0) {
+				document.getElementById('message').innerHTML = 'Now again!';
+			} else if (count == 1) {
+				document.getElementById('message').innerHTML = 'Third time\'s the charm :)';
+			} else if (count == 2) {
+				document.getElementById('message').innerHTML = 'Thank you!';
+			}*/
+			
+			count++;
+		};
+	</script>
+</html>
