@@ -1,4 +1,4 @@
-import pygame, math, sys, random, world, pygame.gfxdraw, imutils
+import pygame, math, sys, random, world, pygame.gfxdraw, imutils, urllib2, json
 from pygame.locals import *
 
 #import ocv stuff
@@ -24,23 +24,27 @@ BACK_IMG = pygame.transform.scale(pygame.image.load(r'assets\background.png'), (
 BIRD_IMG = pygame.transform.scale(pygame.image.load(r'assets\bird.png'), (FOOD_SIZE, FOOD_SIZE))
 QUAD_IMG = pygame.transform.scale(pygame.image.load(r'assets\quad.png'), (300, 190))
 BACK_DRONES_IMG = pygame.transform.scale(pygame.image.load(r'assets\drones.png'), (WIDTH, HEIGHT))
+PRESENT_IMG = pygame.transform.scale(pygame.image.load(r'assets\present.png'), (FOOD_SIZE * 2, FOOD_SIZE * 2))
 GROWTH_RATE = 1.25
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
 # screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.init()
 pygame.mixer.init(44100, -16, 2, 2048)
+pygame.font.init()
 MUSIC = pygame.mixer.Sound(r'assets\banjo.ogg')
 THRONES_MUSIC = pygame.mixer.Sound(r'assets\thrones.ogg')
+PRESENT_MUSIC = pygame.mixer.Sound(r'assets\jingle.ogg')
 BZZ = pygame.mixer.Sound(r'assets\bzz.ogg')
 EAT = pygame.mixer.Sound(r'assets\Eat.ogg')
+TAKE_PRESENT = pygame.mixer.Sound(r'assets\present.ogg')
 
 #pong
 BORDER_MARGIN = 5
 BORDER_COLOR = (250, 250, 250)
 P_LENGTH = 200
 P_WIDTH = 10
-P_SPEED = 6
+P_SPEED = 5
 ME_COLOR = (255, 150, 150)
 HIM_COLOR = (150, 150, 255)
 ME_X = 20
@@ -118,7 +122,7 @@ def processCamera():
 				# update the points queue
 
 	# show the frame to our screen
-	if bool(args['webcam'])
+	if bool(args['webcam']):
 		cv2.imshow("Frame", frame)
 	key = cv2.waitKey(1) & 0xFF
 
@@ -238,7 +242,7 @@ def pong_main():
 	me_y = HEIGHT / 2 - P_LENGTH / 2
 	him_y = HEIGHT / 2 - P_LENGTH / 2
 	ball_p = (WIDTH / 2, HEIGHT / 2)
-	ball_ang = random.random() * math.pi / 4
+	ball_ang = random.random() * math.pi / 4 + math.pi / 8
 
 	# background
 	bg = pygame.image.load("images/pong-back.jpg").convert()
@@ -265,6 +269,7 @@ def pong_main():
 
 		# calc
 		my_location = get_pos()
+		my_location = (my_location[0] + offset[0], my_location[1] + offset[1])
 		me_y = pygame.mouse.get_pos()[1]
 		him_y = ai(ball_p, ball_ang, him_y)
 		ball_data = handle_ball(ball_p, ball_ang, my_location[1], him_y, boing_sound)
@@ -391,11 +396,58 @@ def check_collision(positions):
 		prev_p = curr_p
 	
 	return False
+
+def drone_something_main():
+	done = False
+	back = pygame.transform.scale(pygame.image.load(r'assets\present_back.jpg'), (WIDTH, HEIGHT))
+	myfont = pygame.font.SysFont("tahoma", 37)
+	data = json.loads(urllib2.urlopen('https://hackidc-t14.firebaseio.com/.json').read())
+	PRESENT_MUSIC.play()
+	shtut = 100
+	while not done:
+		clock.tick(30)
+		screen.blit(back, (0, 0))
+		for event in pygame.event.get():
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_ESCAPE:
+					done = True
+			elif event.type == pygame.QUIT:
+				done = True
+         
+		pos = get_pos()
+		pos = (pos[0] + offset[0], pos[1] + offset[1])
+		pygame.draw.circle(screen, FOOD, pos, 10, 0)
 		
+		shtut -= 1
+		if (shtut == 0):
+			shtut = 120
+			new_data = json.loads(urllib2.urlopen('https://hackidc-t14.firebaseio.com/.json').read())
+			if (new_data != None):
+				new_data = [[p[0], 0] for p in new_data]
+			if (data == None and new_data != None):
+				data = new_data
+			elif (new_data != None):
+				data += new_data[len(data):]
+		
+		for i in range(len(data) if data != None else 0):
+			if (data[i] != None):
+				data[i][1] += 10 / float(WIDTH)
+				label = myfont.render(str(i + 1), 1, (255,255,0))
+				x, y = int(data[i][0] * WIDTH), int(data[i][1] * HEIGHT)
+				screen.blit(PRESENT_IMG, (x - FOOD_SIZE / 2, y - FOOD_SIZE / 2))
+				
+				if (dist(pos, (x, y)) < FOOD_SIZE * 2):
+					data[i] = None
+					TAKE_PRESENT.play()
+		
+		pygame.display.flip()
+	PRESENT_MUSIC.stop()
+	
 def main():
 	
 	init()
 	pong_main()
+	drone_something_main()
 	mainGame()
 	finish_screen()
 	
