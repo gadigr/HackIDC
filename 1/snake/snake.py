@@ -21,6 +21,7 @@ TAIL_RADIUS = 1
 MIN_COLLIDE_RADIUS = 150
 FOOD_SIZE = 150
 BACK_IMG = pygame.transform.scale(pygame.image.load(r'assets\background.png'), (WIDTH, HEIGHT))
+INIT_IMG = pygame.transform.scale(pygame.image.load(r'assets\LAND.png'), (WIDTH, HEIGHT))
 BIRD_IMG = pygame.transform.scale(pygame.image.load(r'assets\bird.png'), (FOOD_SIZE, FOOD_SIZE))
 QUAD_IMG = pygame.transform.scale(pygame.image.load(r'assets\quad.png'), (300, 190))
 BACK_DRONES_IMG = pygame.transform.scale(pygame.image.load(r'assets\drones.png'), (WIDTH, HEIGHT))
@@ -68,8 +69,8 @@ args = vars(ap.parse_args())
 # list of tracked points
 # LowerHsv = (0, 161, 121)
 # UpperHsv = (255, 243, 182)
-LowerHsv = (126, 119, 107)
-UpperHsv = (201, 207, 235)
+LowerHsv = (136, 104, 0)
+UpperHsv = (201, 180, 255)
 #LowerHsv = (0, 100, 105)
 #UpperHsv = (201, 253, 219)
 LowerRgb = (0,22,146)
@@ -173,12 +174,12 @@ def init():
 	global offset	
 	
 	while not done:
-		screen.fill(BACK)
-		
+		# screen.fill(BACK)
+		screen.blit(INIT_IMG, (0, 0))
 		#pos = processCamera()
 		pos = get_pos()
 		pos = (pos[0] + offset[0], pos[1] + offset[1])
-		pygame.draw.circle(screen, FOOD, (WIDTH / 2, HEIGHT / 2), 30, 1)
+		# pygame.draw.circle(screen, FOOD, (WIDTH / 2, HEIGHT / 2), 30, 1)
 		pygame.draw.circle(screen, FORE, pos, 10, 0)
 		
 		for event in pygame.event.get():
@@ -197,7 +198,7 @@ def init():
 		 
 		pygame.display.flip()
  
-def handle_ball(ball_p, ball_ang, me_y, him_y, sound):
+def handle_ball(ball_p, ball_ang, me_y, him_y, sound, points):
 	dx = math.cos(ball_ang) * BALL_SPEED
 	dy = math.sin(ball_ang) * BALL_SPEED
 	new_x = ball_p[0] + dx
@@ -211,14 +212,18 @@ def handle_ball(ball_p, ball_ang, me_y, him_y, sound):
 	if (new_x >= ME_X and new_x <= ME_X + P_WIDTH and new_y >= me_y and new_y <= me_y + P_LENGTH):
 		dx = -dx
 		sound.play()
+		points += 1
+		# print points
 	if (new_x >= HIM_X and new_x <= HIM_X + P_WIDTH and new_y >= him_y and new_y <= him_y + P_LENGTH):
 		dx = -dx
 		sound.play()
+		points += 1
+		# print points
 	
 	ball_p = (new_x, new_y)
 	ball_ang = math.atan2(dy, dx)
 	
-	return ball_p, ball_ang
+	return ball_p, ball_ang, points
 
 def ai(ball_p, ball_ang, him_y):
 	y = him_y + P_LENGTH / 2
@@ -238,6 +243,12 @@ def make_rainbow_color():
 	return (red, green, blue)
 make_rainbow_color.counter = 0
 
+def draw_score(screen, score, pos):
+	font = pygame.font.SysFont("Tahoma", 70, False, False)
+	text = font.render(str(score), True, make_rainbow_color())
+	screen.blit(text, pos)
+
+
 def pong_main():
 	me_y = HEIGHT / 2 - P_LENGTH / 2
 	him_y = HEIGHT / 2 - P_LENGTH / 2
@@ -246,7 +257,7 @@ def pong_main():
 
 	# background
 	bg = pygame.image.load("images/pong-back.jpg").convert()
-
+	points = 0
 	# music
 	boing_sound = pygame.mixer.Sound("music/boing.ogg")
 	pygame.mixer.music.load("music/background.ogg")
@@ -272,10 +283,10 @@ def pong_main():
 		my_location = (my_location[0] + offset[0], my_location[1] + offset[1])
 		me_y = pygame.mouse.get_pos()[1]
 		him_y = ai(ball_p, ball_ang, him_y)
-		ball_data = handle_ball(ball_p, ball_ang, my_location[1], him_y, boing_sound)
+		ball_data = handle_ball(ball_p, ball_ang, my_location[1], him_y, boing_sound, points)
 
 		if ball_data is not None:
-			ball_p, ball_ang = ball_data
+			ball_p, ball_ang, points = ball_data
 		else:
 			playing = False
 			lost = True
@@ -285,6 +296,7 @@ def pong_main():
 		screen.blit(bg, (0,0))
 		text = font.render("DRONE PONG", True, make_rainbow_color())
 		screen.blit(text, ((WIDTH / 2) - 135, BORDER_MARGIN + 20))
+		
 
 		# draw borders
 		pygame.draw.rect(screen, BORDER_COLOR, (BORDER_MARGIN, BORDER_MARGIN, WIDTH - (BORDER_MARGIN * 2), HEIGHT - (BORDER_MARGIN * 2)), 3)
@@ -295,7 +307,7 @@ def pong_main():
 		pygame.draw.rect(screen, HIM_COLOR, (HIM_X, him_y, P_WIDTH, P_LENGTH))
 		pygame.draw.circle(screen, (255, 255, 255), map(int, ball_p), 8, 0)
 		pygame.draw.circle(screen, (255, 0, 0), my_location, 10, 0)
-
+		draw_score(screen, points, ((WIDTH / 2) - 16, BORDER_MARGIN + 80))
 		# show
 		pygame.display.flip()
 
@@ -380,6 +392,8 @@ def handle_food(world):
 		world.food = make_food()
 		EAT.play()
 		
+
+		
 def dist(p1, p2):
 	return math.sqrt(math.pow(p1[0] - p2[0], 2) + math.pow(p1[1] - p2[1], 2))
 		
@@ -446,7 +460,7 @@ def drone_something_main():
 	
 def main():
 	
-	init()
+	init()	
 	pong_main()
 	drone_something_main()
 	mainGame()
